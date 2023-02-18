@@ -45,12 +45,16 @@ func main() {
 			now := time.Now().Add(2 * time.Minute)
 			sdate = now.Format("2006-01-02")
 			stime = now.Format("15:04")
+
+			fmt.Printf("Planejando para daqui há 2 minutos (%s -> %s)\n\n", from, to)
 		}
 
 		if len(os.Args) == 5 {
 			stime = os.Args[4]
 			now := time.Now().Add(2 * time.Minute)
 			sdate = now.Format("2006-01-02")
+
+			fmt.Printf("Planejando para hoje as %s (%s -> %s)\n\n", stime, from, to)
 		}
 
 		plan, err := getTripPlan(from, to, sdate, stime)
