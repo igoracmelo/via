@@ -34,12 +34,23 @@ func main() {
 			stime string
 		)
 
+		if len(os.Args) < 4 {
+			panic("argumentos insuficientes") // TODO:
+		}
+
+		from = os.Args[2]
+		to = os.Args[3]
+
 		if len(os.Args) == 4 {
-			from = os.Args[2]
-			to = os.Args[3]
 			now := time.Now().Add(2 * time.Minute)
 			sdate = now.Format("2006-01-02")
 			stime = now.Format("15:04")
+		}
+
+		if len(os.Args) == 5 {
+			stime = os.Args[4]
+			now := time.Now().Add(2 * time.Minute)
+			sdate = now.Format("2006-01-02")
 		}
 
 		plan, err := getTripPlan(from, to, sdate, stime)
