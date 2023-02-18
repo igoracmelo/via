@@ -57,6 +57,29 @@ func main() {
 			fmt.Printf("Planejando para hoje as %s (%s -> %s)\n\n", stime, from, to)
 		}
 
+		if len(os.Args) == 6 {
+			stime = os.Args[4]
+			splits := strings.Split(os.Args[5], "/")
+			d := splits[0]
+
+			m := ""
+			if len(splits) > 1 {
+				m = splits[1]
+			} else {
+				m = time.Now().Format("01")
+			}
+
+			y := ""
+			if len(splits) > 2 {
+				y = splits[2]
+			} else {
+				y = time.Now().Format("2006")
+			}
+
+			sdate = fmt.Sprintf("%s-%s-%s", y, m, d)
+			fmt.Printf("Planejando para dia %s/%s/%s as %s (%s -> %s)\n\n", d, m, y, stime, from, to)
+		}
+
 		plan, err := getTripPlan(from, to, sdate, stime)
 		if err != nil {
 			panic(err) // TODO:
