@@ -5,20 +5,64 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"time"
 )
 
-func main() {
-	stations, err := getStations()
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(stations)
+var colors = map[string]string{
+	"santa_cruz": "\033[0;32m",
+	"paracambi":  "\033[0;36m",
+	"japeri":     "\033[0;34m",
+	"bwhite":     "\033[1m",
+}
 
-	plan, err := getTripPlan("austin", "bangu", "2023-03-10", "15:00")
-	if err != nil {
-		panic(err)
+func color(s string, extension string) string {
+	return colors[extension] + s + "\033[0m"
+}
+
+func main() {
+	if len(os.Args) < 2 {
+		panic("argumentos insuficientes") // TODO:
 	}
-	fmt.Println(plan)
+
+	if os.Args[1] == "p" {
+		var (
+			from  string
+			to    string
+			sdate string
+			stime string
+		)
+
+		if len(os.Args) == 4 {
+			from = os.Args[2]
+			to = os.Args[3]
+			now := time.Now().Add(5 * time.Minute)
+			sdate = now.Format("2006-01-02")
+			stime = now.Format("15:04")
+		}
+
+		plan, err := getTripPlan(from, to, sdate, stime)
+		if err != nil {
+			panic(err) // TODO:
+		}
+
+		for _, traject := range plan.Trajects {
+			for j, trip := range traject.Trips {
+				fmt.Println("> Opção", j+1)
+
+				for _, subtrip := range trip {
+					fmt.Printf("%s - %s\n", subtrip.TimeDeparture[:5], color(subtrip.StationNameOrigin, "bwhite"))
+					fmt.Println(color("          |", subtrip.ExtensionId))
+				}
+
+				last := trip[len(trip)-1]
+				fmt.Printf("%s - %s\n", last.TimeArrival[:5], color(last.StationNameDest, "bwhite"))
+
+				fmt.Println()
+				fmt.Println()
+			}
+		}
+	}
 }
 
 func getStations() (*StationsResponse, error) {
@@ -41,8 +85,8 @@ func getStations() (*StationsResponse, error) {
 	return stations, nil
 }
 
-func getTripPlan(from string, to string, date string, stime string) (*TripPlanResponse, error) {
-	url := fmt.Sprintf("https://content.supervia.com.br/planeje/%s/%s/%s/%s", from, to, date, stime)
+func getTripPlan(from string, to string, sdate string, stime string) (*TripPlanResponse, error) {
+	url := fmt.Sprintf("https://content.supervia.com.br/planeje/%s/%s/%s/%s", from, to, sdate, stime)
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -63,16 +107,18 @@ func getTripPlan(from string, to string, date string, stime string) (*TripPlanRe
 }
 
 type TripPlanResponse struct {
-	Trajetos []struct {
-		Viagens [][]struct {
-			StationIdOrigin string `json:"estacao_origem_id"`
-			StationIdDest   string `json:"estacao_destino_id"`
-			TimeDeparture   string `json:"horario_partida"`
-			TimeArrival     string `json:"horario_chegada"`
-			ExtensionId     string `json:"ramal_id"`
-			ExtensionName   string `json:"ramal_nome"`
-		}
-	}
+	Trajects []struct {
+		Trips [][]struct {
+			StationIdOrigin   string `json:"estacao_origem_id"`
+			StationNameOrigin string `json:"estacao_origem_nome"`
+			StationIdDest     string `json:"estacao_destino_id"`
+			StationNameDest   string `json:"estacao_destino_nome"`
+			TimeDeparture     string `json:"horario_partida"`
+			TimeArrival       string `json:"horario_chegada"`
+			ExtensionId       string `json:"ramal_id"`
+			ExtensionName     string `json:"ramal_nome"`
+		} `json:"viagens"`
+	} `json:"trajetos"`
 }
 
 type StationsResponse struct {
