@@ -17,8 +17,8 @@ var colors = map[string]string{
 	"bwhite":     "\033[1m",
 }
 
-func color(s string, extension string) string {
-	return colors[extension] + s + "\033[0m"
+func color(s string, name string) string {
+	return colors[name] + s + "\033[0m"
 }
 
 func main() {
