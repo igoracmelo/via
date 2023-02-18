@@ -58,7 +58,10 @@ func main() {
 			panic(err) // TODO:
 		}
 
-		for _, traject := range plan.Trajects {
+		for i, traject := range plan.Trajects {
+			fmt.Println(color("Trajeto", "bwhite"), i+1)
+			fmt.Println()
+
 			for j, trip := range traject.Trips {
 				fmt.Println("> Opção", j+1)
 
