@@ -36,7 +36,7 @@ func main() {
 		if len(os.Args) == 4 {
 			from = os.Args[2]
 			to = os.Args[3]
-			now := time.Now().Add(5 * time.Minute)
+			now := time.Now().Add(2 * time.Minute)
 			sdate = now.Format("2006-01-02")
 			stime = now.Format("15:04")
 		}
