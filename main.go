@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"strings"
@@ -85,6 +86,11 @@ func main() {
 
 			sdate = fmt.Sprintf("%s-%s-%s", y, m, d)
 			fmt.Printf("Planejando para dia %s/%s/%s as %s (%s -> %s)\n\n", d, m, y, stime, from, to)
+		}
+
+		_, err = getAlerts(to, from, sdate, stime)
+		if err != nil {
+			panic(err) // TODO:
 		}
 
 		plan, err := getTripPlan(from, to, sdate, stime)
@@ -179,6 +185,56 @@ func getTripPlan(from string, to string, sdate string, stime string) (*TripPlanR
 	return plan, nil
 }
 
+func getAlerts(to, from, sdate, stime string) (*AlertsResponse, error) {
+	q := url.Values{}
+
+	fields := []string{
+		"nid",
+		"title",
+		"field_alerta_ramais",
+		"field_alerta_estacao",
+		"field_alerta_descricao",
+		"field_alerta_data",
+		"field_alerta_link",
+	}
+
+	q.Set("type", "alerta")
+	q.Set("fields", strings.Join(fields, ","))
+	q.Set("partida", to)
+	q.Set("chegada", from)
+	q.Set("data", sdate)
+	q.Set("hora", stime)
+	// q.Add("ramais", ...)
+
+	req := &http.Request{
+		Method: "GET",
+		URL: &url.URL{
+			Scheme:   "https",
+			Host:     "www.supervia.com.br",
+			Path:     "/pt-br/api/alertas",
+			RawQuery: q.Encode(),
+		},
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	alerts := &AlertsResponse{}
+	err = json.Unmarshal(body, alerts)
+	if err != nil {
+		return nil, err
+	}
+
+	return alerts, nil
+}
+
 func findStationBestMatch(station string, stations *StationsResponse) string {
 	station = strings.ToLower(station)
 	bestId := ""
@@ -218,3 +274,5 @@ type StationsResponse struct {
 		Name string `json:"nome"`
 	} `json:"estacoes"`
 }
+
+type AlertsResponse []struct{}
