@@ -45,8 +45,8 @@ func main() {
 			panic(err) // TODO:
 		}
 
-		from = findBestMatch(os.Args[2], stations)
-		to = findBestMatch(os.Args[3], stations)
+		from = findStationBestMatch(os.Args[2], stations)
+		to = findStationBestMatch(os.Args[3], stations)
 
 		if len(os.Args) == 4 {
 			now := time.Now().Add(2 * time.Minute)
@@ -179,7 +179,7 @@ func getTripPlan(from string, to string, sdate string, stime string) (*TripPlanR
 	return plan, nil
 }
 
-func findBestMatch(station string, stations *StationsResponse) string {
+func findStationBestMatch(station string, stations *StationsResponse) string {
 	station = strings.ToLower(station)
 	bestId := ""
 	bestText := ""
