@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"strings"
 	"time"
 )
@@ -39,7 +40,7 @@ func main() {
 			panic("argumentos insuficientes") // TODO:
 		}
 
-		stations, err := getStations()
+		stations, err := getStationsCached()
 		if err != nil {
 			panic(err) // TODO:
 		}
@@ -126,8 +127,32 @@ func getStations() (*StationsResponse, error) {
 
 	stations := &StationsResponse{}
 	err = json.Unmarshal(body, stations)
+	return stations, err
+}
+
+func getStationsCached() (*StationsResponse, error) {
+	p := path.Join(os.TempDir(), "via-stations-cache")
+	stations := &StationsResponse{}
+
+	data, err := os.ReadFile(p)
+	if err == nil {
+		err = json.Unmarshal(data, stations)
+
+		// unmarshal may fail because the file can be empty or corrupted
+		if err == nil {
+			return stations, nil
+		}
+	}
+
+	stations, err = getStations()
 	if err != nil {
 		return nil, err
+	}
+
+	// caching is optional, so these errors should not be returned
+	data, err = json.Marshal(stations)
+	if err == nil {
+		_ = os.WriteFile(p, data, 0666)
 	}
 
 	return stations, nil
