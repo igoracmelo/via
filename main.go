@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -25,11 +26,13 @@ func color(s string, name string) string {
 }
 
 func main() {
-	if len(os.Args) < 2 {
+	flag.Parse()
+
+	if flag.NArg() < 1 {
 		panic("argumentos insuficientes") // TODO:
 	}
 
-	if os.Args[1] == "p" {
+	if flag.Arg(0) == "p" {
 		var (
 			from  string
 			to    string
@@ -37,7 +40,7 @@ func main() {
 			stime string
 		)
 
-		if len(os.Args) < 4 {
+		if flag.NArg() < 3 {
 			panic("argumentos insuficientes") // TODO:
 		}
 
@@ -46,10 +49,10 @@ func main() {
 			panic(err) // TODO:
 		}
 
-		from = findStationBestMatch(os.Args[2], stations)
-		to = findStationBestMatch(os.Args[3], stations)
+		from = findStationBestMatch(flag.Arg(1), stations)
+		to = findStationBestMatch(flag.Arg(2), stations)
 
-		if len(os.Args) == 4 {
+		if flag.NArg() == 3 {
 			now := time.Now().Add(2 * time.Minute)
 			sdate = now.Format("2006-01-02")
 			stime = now.Format("15:04")
@@ -57,16 +60,16 @@ func main() {
 			fmt.Printf("Planejando para daqui há 2 minutos (%s -> %s)\n\n", from, to)
 		}
 
-		if len(os.Args) == 5 {
-			stime = os.Args[4]
+		if flag.NArg() == 4 {
+			stime = flag.Arg(3)
 			now := time.Now().Add(2 * time.Minute)
 			sdate = now.Format("2006-01-02")
 
 			fmt.Printf("Planejando para hoje as %s (%s -> %s)\n\n", stime, from, to)
 		}
 
-		if len(os.Args) == 6 {
-			stime = os.Args[4]
+		if flag.NArg() == 5 {
+			stime = flag.Arg(3)
 			splits := strings.Split(os.Args[5], "/")
 			d := splits[0]
 
