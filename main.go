@@ -153,7 +153,11 @@ func printTrajects(plan *TripPlanResponse) {
 			}
 
 			last := trip[len(trip)-1]
-			fmt.Printf("%s - %s\n", last.TimeArrival[:5], color(last.StationNameDest, "bwhite"))
+			arrival := strings.Repeat(" ", 7)
+			if len(last.TimeArrival) > 5 {
+				arrival = last.TimeArrival[:5] + " - "
+			}
+			fmt.Println(arrival + color(last.StationNameDest, "bwhite"))
 
 			fmt.Println()
 			fmt.Println()
