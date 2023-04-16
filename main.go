@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/igoracmelo/via/cache"
 	"github.com/igoracmelo/via/supervia"
 )
 
@@ -224,10 +225,9 @@ func getStations() (*supervia.StationsResponse, error) {
 }
 
 func getStationsCache() (*supervia.StationsResponse, error) {
-	p := path.Join(os.TempDir(), "via-stations-cache")
 	stations := &supervia.StationsResponse{}
 
-	data, err := os.ReadFile(p)
+	data, err := cache.Load("stations")
 	if err != nil {
 		return nil, err
 	}
@@ -241,14 +241,12 @@ func getStationsCache() (*supervia.StationsResponse, error) {
 }
 
 func storeStationsCache(stations *supervia.StationsResponse) error {
-	p := path.Join(os.TempDir(), "via-stations-cache")
-
 	data, err := json.Marshal(stations)
 	if err != nil {
 		return err
 	}
 
-	err = os.WriteFile(p, data, 0666)
+	err = cache.Store("stations", data, 2*24*time.Hour)
 	if err != nil {
 		return err
 	}

@@ -26,6 +26,7 @@ func GetStationsOnline() (*StationsResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
