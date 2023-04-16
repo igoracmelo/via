@@ -373,20 +373,15 @@ func printRequest(req *http.Request) {
 
 func findStationBestMatch(station string, stations *StationsResponse) string {
 	station = strings.ToLower(station)
-	bestId := ""
-	bestText := ""
 
 	for _, entry := range stations.Stations {
-		bestDelta := len(bestId) - len(bestText)
-		currDelta := len(entry.Id) - len(station)
-
-		if strings.Contains(entry.Id, station) && (bestId == "" || currDelta < bestDelta) {
-			bestId = entry.Id
-			bestText = station
+		name := strings.ToLower(entry.Name)
+		if strings.Contains(name, station) || strings.Contains(entry.Id, station) {
+			return entry.Id
 		}
 	}
 
-	return bestId
+	return ""
 }
 
 type TripPlanResponse struct {
