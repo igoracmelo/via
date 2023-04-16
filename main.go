@@ -4,17 +4,17 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"math"
 	"net/http"
-	"net/url"
 	"os"
 	"path"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/igoracmelo/via/supervia"
 )
 
 var colors = map[string]string{
@@ -76,7 +76,7 @@ func main() {
 			planTime = formatPlanTime(planTime, now)
 		}
 
-		_, err = getAlerts(to, from, planDay, planTime)
+		_, err = supervia.GetAlerts(to, from, planDay, planTime)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -88,7 +88,7 @@ func main() {
 
 		fmt.Printf("planejando para %s\n\n", humanReadableTime(t))
 
-		plan, err := getTripPlan(from, to, planDay, planTime)
+		plan, err := supervia.GetTripPlan(from, to, planDay, planTime)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -135,7 +135,7 @@ func humanReadableTime(t time.Time) string {
 	return s
 }
 
-func printTrajects(plan *TripPlanResponse) {
+func printTrajects(plan *supervia.TripPlanResponse) {
 	for i, traject := range plan.Trajects {
 		fmt.Println(color("Trajeto", "bwhite"), i+1)
 		fmt.Println()
@@ -204,13 +204,13 @@ func formatPlanDay(s string, fallback time.Time) string {
 	return fmt.Sprintf("%s-%s-%s", y, m, d)
 }
 
-func getStations() (*StationsResponse, error) {
+func getStations() (*supervia.StationsResponse, error) {
 	stations, err := getStationsCache()
 	if err == nil {
 		return stations, nil
 	}
 
-	stations, err = getStationsOnline()
+	stations, err = supervia.GetStationsOnline()
 	if err != nil {
 		return nil, err
 	}
@@ -223,35 +223,9 @@ func getStations() (*StationsResponse, error) {
 	return stations, nil
 }
 
-func getStationsOnline() (*StationsResponse, error) {
-	req, err := http.NewRequest("GET", "https://content.supervia.com.br/estacoes", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	printRequest(req)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status: %d\nbody: %s", resp.StatusCode, string(body))
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	stations := &StationsResponse{}
-	err = json.Unmarshal(body, stations)
-	return stations, err
-}
-
-func getStationsCache() (*StationsResponse, error) {
+func getStationsCache() (*supervia.StationsResponse, error) {
 	p := path.Join(os.TempDir(), "via-stations-cache")
-	stations := &StationsResponse{}
+	stations := &supervia.StationsResponse{}
 
 	data, err := os.ReadFile(p)
 	if err != nil {
@@ -266,7 +240,7 @@ func getStationsCache() (*StationsResponse, error) {
 	return stations, nil
 }
 
-func storeStationsCache(stations *StationsResponse) error {
+func storeStationsCache(stations *supervia.StationsResponse) error {
 	p := path.Join(os.TempDir(), "via-stations-cache")
 
 	data, err := json.Marshal(stations)
@@ -282,96 +256,11 @@ func storeStationsCache(stations *StationsResponse) error {
 	return nil
 }
 
-func getTripPlan(from string, to string, sdate string, stime string) (*TripPlanResponse, error) {
-	url := fmt.Sprintf("https://content.supervia.com.br/planeje/%s/%s/%s/%s", from, to, sdate, stime)
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	printRequest(req)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status: %d\nbody: %s", resp.StatusCode, string(body))
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	plan := &TripPlanResponse{}
-	err = json.Unmarshal(body, plan)
-	if err != nil {
-		return nil, err
-	}
-
-	return plan, nil
-}
-
-func getAlerts(to, from, sdate, stime string) (*AlertsResponse, error) {
-	q := url.Values{}
-
-	fields := []string{
-		"nid",
-		"title",
-		"field_alerta_ramais",
-		"field_alerta_estacao",
-		"field_alerta_descricao",
-		"field_alerta_data",
-		"field_alerta_link",
-	}
-
-	q.Set("type", "alerta")
-	q.Set("fields", strings.Join(fields, ","))
-	q.Set("partida", to)
-	q.Set("chegada", from)
-	q.Set("data", sdate)
-	q.Set("hora", stime)
-	// q.Add("ramais", ...)
-
-	req := &http.Request{
-		Method: "GET",
-		URL: &url.URL{
-			Scheme:   "https",
-			Host:     "www.supervia.com.br",
-			Path:     "/pt-br/api/alertas",
-			RawQuery: q.Encode(),
-		},
-	}
-
-	printRequest(req)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status: %d\nbody: %s", resp.StatusCode, string(body))
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	alerts := &AlertsResponse{}
-	err = json.Unmarshal(body, alerts)
-	if err != nil {
-		return nil, err
-	}
-
-	return alerts, nil
-}
-
 func printRequest(req *http.Request) {
 	// fmt.Println(req.Method, req.URL.String())
 }
 
-func findStationBestMatch(station string, stations *StationsResponse) string {
+func findStationBestMatch(station string, stations *supervia.StationsResponse) string {
 	station = strings.ToLower(station)
 
 	for _, entry := range stations.Stations {
@@ -383,27 +272,3 @@ func findStationBestMatch(station string, stations *StationsResponse) string {
 
 	return ""
 }
-
-type TripPlanResponse struct {
-	Trajects []struct {
-		Trips [][]struct {
-			StationIdOrigin   string `json:"estacao_origem_id"`
-			StationNameOrigin string `json:"estacao_origem_nome"`
-			StationIdDest     string `json:"estacao_destino_id"`
-			StationNameDest   string `json:"estacao_destino_nome"`
-			TimeDeparture     string `json:"horario_partida"`
-			TimeArrival       string `json:"horario_chegada"`
-			ExtensionId       string `json:"ramal_id"`
-			ExtensionName     string `json:"ramal_nome"`
-		} `json:"viagens"`
-	} `json:"trajetos"`
-}
-
-type StationsResponse struct {
-	Stations []struct {
-		Id   string `json:"id"`
-		Name string `json:"nome"`
-	} `json:"estacoes"`
-}
-
-type AlertsResponse []struct{}
