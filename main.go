@@ -33,6 +33,9 @@ var planDay string
 var planTime string
 
 func main() {
+	log.SetFlags(0)
+	log.SetPrefix("")
+
 	pCmd := flag.NewFlagSet("p", flag.ExitOnError)
 	pCmd.StringVar(&planTime, "t", "", "hora da viagem")
 	pCmd.StringVar(&planDay, "d", "", "dia da viagem")
@@ -61,6 +64,13 @@ func main() {
 
 		from := findStationBestMatch(os.Args[2], stations)
 		to := findStationBestMatch(os.Args[3], stations)
+
+		if from == "" {
+			log.Fatal("estação de origem não identificada: " + os.Args[2])
+		}
+		if to == "" {
+			log.Fatal("estação de destino não identificada: " + os.Args[3])
+		}
 
 		now := time.Now().Add(2 * time.Minute)
 
