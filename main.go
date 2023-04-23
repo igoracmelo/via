@@ -8,7 +8,6 @@ import (
 	"math"
 	"net/http"
 	"os"
-	"path"
 	"regexp"
 	"strconv"
 	"strings"

@@ -9,7 +9,7 @@ import (
 
 const prefix = "via-cache-"
 
-var ttls map[string]time.Time
+var ttls = map[string]time.Time{}
 
 func Store(name string, data []byte, ttl time.Duration) error {
 	p := path.Join(os.TempDir(), name)
