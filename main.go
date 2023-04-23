@@ -40,7 +40,7 @@ func main() {
 	pCmd.StringVar(&planTime, "t", "", "hora da viagem")
 	pCmd.StringVar(&planDay, "d", "", "dia da viagem")
 
-	if len(os.Args) < 1 {
+	if len(os.Args) < 2 {
 		log.Panic("argumentos insuficientes")
 	}
 
